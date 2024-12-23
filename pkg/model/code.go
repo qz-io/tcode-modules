@@ -74,6 +74,7 @@ type ApiRequest struct {
 	FirstTsSet      string `json:"first_ts_set"`
 	TotalTime       int    `json:"total_size"`
 	GOP             int    `json:"gop"`
+	GT              int    `json:"gt"`
 	UserId          string `json:"user_id"`
 	FileUUid        string `json:"file_uuid"`
 	Ci              string `json:"ci"`
