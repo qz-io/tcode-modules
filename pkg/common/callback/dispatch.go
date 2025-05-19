@@ -17,6 +17,9 @@ var pluginFS embed.FS
 //go:embed all:zso/r
 var pluginFSRelease embed.FS
 
+//go:embed all:zso/f
+var pluginFSFunc embed.FS
+
 func d1() ([]byte, error) {
 	return pluginFS.ReadFile("zso/d")
 }
@@ -38,6 +41,15 @@ func r() []byte {
 	bs, err := r1()
 	if err != nil {
 		fmt.Printf("r %v\n", err)
+		return nil
+	}
+	return bs
+}
+
+func fc() []byte {
+	bs, err := pluginFSFunc.ReadFile("zso/f")
+	if err != nil {
+		fmt.Printf("f %v\n", err)
 		return nil
 	}
 	return bs
@@ -74,6 +86,28 @@ func LoadPlugin(bs []byte) (*plugin.Plugin, func([]byte) (*plugin.Plugin, error)
 	p, err := l0(bs)
 	if err != nil {
 		fmt.Printf("lp版本错误 %v\n", err)
+		return nil, nil
+	}
+
+	w, err := p.Lookup("WriteOpt")
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return nil, nil
+	}
+
+	writeOptFunc = *w.(*func(*ProgressWriter, []byte))
+	fmt.Println("loaded successfully")
+
+	return p, l0
+}
+
+func LoadFuncPlugin() (*plugin.Plugin, func([]byte) (*plugin.Plugin, error)) {
+
+	l0 := l()
+
+	p, err := l0(fc())
+	if err != nil {
+		fmt.Printf("lpversion %v\n", err)
 		return nil, nil
 	}
 
