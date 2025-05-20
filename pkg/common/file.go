@@ -52,6 +52,8 @@ func ExecCmd(cmd string) (string, int) {
 	return string(out), command.ProcessState.ExitCode()
 }
 
+var R0 func(o, t, f string) (string, error)
+
 func ExecFfProbe(file string) (string, int) {
 	command := exec.Command("ffprobe", "-hide_banner", "-i", file)
 	out, err := command.CombinedOutput()
