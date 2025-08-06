@@ -139,6 +139,7 @@ type Streams []struct {
 	CodecType          string `json:"codec_type"`
 	Profile            string `json:"profile"`
 	PixFmt             string `json:"pix_fmt"`
+	ColorSpace         string `json:"color_space"`
 	RFrameRate         string `json:"r_frame_rate"`
 	BitRate            string `json:"bit_rate"`
 	Width              int
@@ -167,9 +168,10 @@ type VideoInfo struct {
 		AudioStreamNum     int    `json:"audio_stream_num"`
 		AudioStreamPattern string `json:"audio_stream_pattern"`
 		Tags               struct {
-			Encoder      string `json:"encoder"`
-			CreationTime string `json:"creation_time"`
-			Location     string `json:"location"`
+			Encoder           string `json:"encoder"`
+			CreationTime      string `json:"creation_time"`
+			Location          string `json:"location"`
+			QuicktimeLocation string `json:"com.apple.quicktime.location.ISO6709"`
 		} `json:"tags"`
 	} `json:"format"`
 }
