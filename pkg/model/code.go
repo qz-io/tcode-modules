@@ -156,6 +156,7 @@ type SideData struct {
 	Rotation int `json:"rotation"`
 }
 type VideoInfo struct {
+	Version string `json:"version"`
 	Streams `json:"streams"`
 	Format  struct {
 		MediaType          int    `json:"media_type"`
