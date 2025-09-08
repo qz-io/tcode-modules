@@ -139,3 +139,65 @@ func (rc *RClient) GetExpire(key string) (time.Duration, error) {
 		return 0, errors.New("invalid client type")
 	}
 }
+
+func (rc *RClient) Incr(key string) (int64, error) {
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		return c.Incr(ctx, key).Result()
+	case *redis.ClusterClient:
+		return c.Incr(ctx, key).Result()
+	default:
+		return 0, errors.New("invalid client type")
+	}
+}
+
+func (rc *RClient) Decr(key string) (int64, error) {
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		currentVal, err := c.Get(ctx, key).Int64()
+		if err != nil && err != redis.Nil {
+			return 0, err
+		}
+
+		if err == redis.Nil {
+			err = c.Set(ctx, key, 0, 0).Err()
+			return 0, err
+		}
+
+		if currentVal <= 0 {
+			err = c.Set(ctx, key, 0, 0).Err()
+			return 0, err
+		}
+
+		return c.Decr(ctx, key).Result()
+
+	case *redis.ClusterClient:
+		currentVal, err := c.Get(ctx, key).Int64()
+		if err != nil && err != redis.Nil {
+			return 0, err
+		}
+		if err == redis.Nil {
+			err = c.Set(ctx, key, 0, 0).Err()
+			return 0, err
+		}
+		if currentVal <= 0 {
+			err = c.Set(ctx, key, 0, 0).Err()
+			return 0, err
+		}
+		return c.Decr(ctx, key).Result()
+
+	default:
+		return 0, errors.New("invalid client type")
+	}
+}
+
+func (rc *RClient) Expire(key string, expiration time.Duration) error {
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		return c.Expire(ctx, key, expiration).Err()
+	case *redis.ClusterClient:
+		return c.Expire(ctx, key, expiration).Err()
+	default:
+		return errors.New("invalid client type")
+	}
+}
