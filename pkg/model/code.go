@@ -84,7 +84,8 @@ type ApiRequest struct {
 	TargetCodecType string `json:"target_codec_type"`
 	TotalTsNumber   int
 	SkipIds         []string
-	PreTranscode    bool `json:"pre_transcode"`
+	PreTranscode    bool   `json:"pre_transcode"`
+	StreamId        string `json:"streamId"`
 }
 
 type FastApiRequest struct {
