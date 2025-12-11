@@ -29,7 +29,7 @@ func newRedisClient(address, user, password string) (*RClient, error) {
 		})
 		rs, err0 := client.ClusterSlots(context.Background()).Result()
 		if err0 == nil {
-			if rs != nil && len(rs) > 1 {
+			if len(rs) > 1 {
 				if common.Logger != nil {
 					common.Logger.Error().Msgf("Server is in cluster mode but configured as standalone mode. Please modify the configuration. If there is only one IP address, add a comma at the end to set it to cluster mode")
 				}

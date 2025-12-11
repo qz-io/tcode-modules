@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"time"
-	_ "time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -14,6 +13,22 @@ type RClient struct {
 }
 
 var ctx = context.Background()
+
+var unlockScript = redis.NewScript(`
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+	return redis.call("DEL", KEYS[1])
+else
+	return 0
+end
+`)
+
+var renewScript = redis.NewScript(`
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+	return redis.call("PEXPIRE", KEYS[1], ARGV[2])
+else
+	return 0
+end
+`)
 
 func (rc *RClient) Ping() (interface{}, error) {
 	switch c := rc.client.(type) {
@@ -188,6 +203,140 @@ func (rc *RClient) Decr(key string) (int64, error) {
 
 	default:
 		return 0, errors.New("invalid client type")
+	}
+}
+
+func (rc *RClient) AcquireLock(key, value string, expiration time.Duration) (bool, error) {
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		return c.SetNX(ctx, key, value, expiration).Result()
+	case *redis.ClusterClient:
+		return c.SetNX(ctx, key, value, expiration).Result()
+	default:
+		return false, errors.New("invalid client type")
+	}
+}
+
+func (rc *RClient) ReleaseLock(key, value string) (bool, error) {
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		res, err := unlockScript.Run(ctx, c, []string{key}, value).Int64()
+		if err != nil {
+			return false, err
+		}
+		return res == 1, nil
+	case *redis.ClusterClient:
+		res, err := unlockScript.Run(ctx, c, []string{key}, value).Int64()
+		if err != nil {
+			return false, err
+		}
+		return res == 1, nil
+	default:
+		return false, errors.New("invalid client type")
+	}
+}
+
+func (rc *RClient) IsLockOwner(key, value string) (bool, error) {
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		v, err := c.Get(ctx, key).Result()
+		if err == redis.Nil {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		return v == value, nil
+	case *redis.ClusterClient:
+		v, err := c.Get(ctx, key).Result()
+		if err == redis.Nil {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		return v == value, nil
+	default:
+		return false, errors.New("invalid client type")
+	}
+}
+
+func (rc *RClient) AcquireLockCtx(ctx context.Context, key, value string, expiration time.Duration) (bool, error) {
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		return c.SetNX(ctx, key, value, expiration).Result()
+	case *redis.ClusterClient:
+		return c.SetNX(ctx, key, value, expiration).Result()
+	default:
+		return false, errors.New("invalid client type")
+	}
+}
+
+func (rc *RClient) ReleaseLockCtx(ctx context.Context, key, value string) (bool, error) {
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		res, err := unlockScript.Run(ctx, c, []string{key}, value).Int64()
+		if err != nil {
+			return false, err
+		}
+		return res == 1, nil
+	case *redis.ClusterClient:
+		res, err := unlockScript.Run(ctx, c, []string{key}, value).Int64()
+		if err != nil {
+			return false, err
+		}
+		return res == 1, nil
+	default:
+		return false, errors.New("invalid client type")
+	}
+}
+
+func (rc *RClient) IsLockOwnerCtx(ctx context.Context, key, value string) (bool, error) {
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		v, err := c.Get(ctx, key).Result()
+		if err == redis.Nil {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		return v == value, nil
+	case *redis.ClusterClient:
+		v, err := c.Get(ctx, key).Result()
+		if err == redis.Nil {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		return v == value, nil
+	default:
+		return false, errors.New("invalid client type")
+	}
+}
+
+func (rc *RClient) RenewLock(key, value string, expiration time.Duration) (bool, error) {
+	return rc.RenewLockCtx(ctx, key, value, expiration)
+}
+
+func (rc *RClient) RenewLockCtx(ctx context.Context, key, value string, expiration time.Duration) (bool, error) {
+	ms := expiration.Milliseconds()
+	switch c := rc.client.(type) {
+	case *redis.Client:
+		res, err := renewScript.Run(ctx, c, []string{key}, value, ms).Int64()
+		if err != nil {
+			return false, err
+		}
+		return res == 1, nil
+	case *redis.ClusterClient:
+		res, err := renewScript.Run(ctx, c, []string{key}, value, ms).Int64()
+		if err != nil {
+			return false, err
+		}
+		return res == 1, nil
+	default:
+		return false, errors.New("invalid client type")
 	}
 }
 
