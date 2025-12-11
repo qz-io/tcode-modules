@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"os/exec"
 	"time"
@@ -66,6 +67,10 @@ type CodeRequest struct {
 	CallBackIndexUrl string
 	ApiReq           ApiRequest
 	RunError         string
+	CodeCtx          context.Context
+	CancelFunc       context.CancelFunc
+	Mark1            string
+	Mark2            string
 }
 
 type ApiRequest struct {
