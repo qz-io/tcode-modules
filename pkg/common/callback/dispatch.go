@@ -152,3 +152,9 @@ func (p *ProgressWriter) Write(b []byte) (int, error) {
 
 	return len(b), nil
 }
+
+func SetWriteOptFunc(fn func(*ProgressWriter, []byte)) {
+	if fn != nil {
+		writeOptFunc = fn
+	}
+}
